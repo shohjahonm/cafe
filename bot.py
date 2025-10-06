@@ -4,7 +4,7 @@ from telegram import Update, KeyboardButton, ReplyKeyboardMarkup, Poll
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext, PollAnswerHandler
 
 # Environment variables
-TOKEN = os.getenv("TOKEN")
+TOKEN = os.getenv("TOKEN", "8328899370:AAEZCpFklna6jVgCNC6VCeFGp_VYj7Dx4hA")
 ADMIN_ID = int(os.getenv("ADMIN_ID", "1139713731"))
 
 # /start komandasi
