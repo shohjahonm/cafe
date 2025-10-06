@@ -10,7 +10,7 @@ ADMIN_ID = int(os.getenv("ADMIN_ID", "1139713731"))
 # /start komandasi
 def start(update: Update, context: CallbackContext):
     keyboard = [
-        [KeyboardButton("📨 Talab va takliflar"), KeyboardButton("📊 So‘rovnomada qatnashish")]
+        [KeyboardButton("📨 Shikoyat va takliflar"), KeyboardButton("📊 So‘rovnomada qatnashish")]
     ]
     reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
     update.message.reply_text(
@@ -23,8 +23,8 @@ def handle_message(update: Update, context: CallbackContext):
     text = update.message.text
     chat_id = update.message.chat_id
 
-    if text == "📨 Talab va takliflar":
-        context.bot.send_message(chat_id=chat_id, text="Iltimos, talab yoki taklifingizni yozing:")
+    if text == "📨 Shikoyat va takliflar":
+        context.bot.send_message(chat_id=chat_id, text="Iltimos, shikoyat yoki taklifingizni yozing:")
 
     elif text == "📊 So‘rovnomada qatnashish":
         questions = [
@@ -32,21 +32,26 @@ def handle_message(update: Update, context: CallbackContext):
             "Xizmatdan mamnunmisiz?",
             "Qanday yaxshilash mumkin?"
         ]
-        options = ["Ha", "Yo‘q", "Hali bilmayman", "Boshqa"]
 
-        for q in questions:
+        options = [
+            ["Ha", "Yo‘q"],                     # 1-savol uchun javoblar
+            ["Ha", "Yo‘q", "Qisman"],           # 2-savol uchun javoblar
+            ["Ko‘proq variant", "Kamroq variant"]  # 3-savol uchun javoblar
+        ]
+
+        for i, question in enumerate(questions):
             context.bot.send_poll(
-                chat_id=chat_id,
-                question=q,
-                options=options,
-                is_anonymous=False,
-                allows_multiple_answers=True
-            )
+            chat_id=update.effective_chat.id,
+            question=question,
+            options=options[i],
+            is_anonymous=False,
+            allows_multiple_answers=True
+        )
 
     else:
         # Talab/taklifni adminga yuborish
         context.bot.send_message(chat_id=ADMIN_ID, text=f"Yangi talab/taklif:\n\n{text}")
-        context.bot.send_message(chat_id=chat_id, text="Xabaringiz uchun rahmat! ✅")
+        context.bot.send_message(chat_id=chat_id, text="Fikringiz uchun rahmat! Bu biz uchun juda ham muhim!! ✅")
 
         # CSV-ga yozish
         with open("results.csv", "a", newline="", encoding="utf-8") as file:
