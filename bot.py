@@ -1,6 +1,6 @@
 import os
 import csv
-from telegram import Update, KeyboardButton, ReplyKeyboardMarkup, Poll
+from telegram import Update, KeyboardButton, ReplyKeyboardMarkup
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext, PollAnswerHandler
 
 # Environment variables
@@ -18,6 +18,21 @@ def start(update: Update, context: CallbackContext):
         reply_markup=reply_markup
     )
 
+# So‘rovnoma ma’lumotlari
+SURVEY_QUESTIONS = [
+    "Sizga qaysi ovqatlar yoqadi?",
+    "Sizga qaysi Fri-setlar yoqadi?",
+    "Sizga oshxonadagi qaysi qulayliklar yoqadi?",
+    "Oshxonamizni 1-5 gacha baholang"
+]
+
+SURVEY_OPTIONS = [
+    ["Manti", "Tovuq Kabob", "Grechka", "Osh", "Lag'mon", "Galupsi"],
+    ["Fri", "Fri Kolbasa", "Fri Sosiska", "Fri Chicken"],
+    ["Tozalik", "Ovqatlarning ta'mi va sifati", "Xodimlarning muomalasi"],
+    ["1", "2", "3", "4", "5"]
+]
+
 # Xabarlarni ishlovchi funksiya
 def handle_message(update: Update, context: CallbackContext):
     text = update.message.text
@@ -27,29 +42,15 @@ def handle_message(update: Update, context: CallbackContext):
         context.bot.send_message(chat_id=chat_id, text="Iltimos, shikoyat yoki taklifingizni yozing:")
 
     elif text == "📊 So‘rovnomada qatnashish":
-        # Savollar va javob variantlari
-        questions = [
-            "Sizga qaysi ovqatlar yoqadi?",
-            "Sizga qaysi Fri-setlar yoqadi?",
-            "Sizga oshxonadagi qaysi qulayliklar yoqadi?",
-            "Oshxonamizni 1-5 gacha baholang"
-        ]
-
-        options = [
-            ["Manti", "Tovuq Kabob", "Grechka", "Osh", "Lag'mon", "Galupsi"],  # 1-savol
-            ["Fri", "Fri Kolbasa", "Fri Sosiska", "Fri Chicken"],               # 2-savol
-            ["Tozalik", "Ovqatlarning ta'mi va sifati", "Xodimlarning muomalasi"],  # 3-savol
-            ["1", "2", "3", "4", "5"]                                           # 4-savol
-        ]
-
-        # Foydalanuvchi uchun savol indeksini saqlash
+        # Foydalanuvchi uchun indeksni 0 ga o‘rnatamiz
         context.user_data['survey_index'] = 0
+        context.user_data['chat_id'] = chat_id
 
-        # Birinchi savolni yuborish
+        # Birinchi so‘rovnomani yuboramiz
         context.bot.send_poll(
-            chat_id=update.effective_chat.id,
-            question=questions[0],
-            options=options[0],
+            chat_id=chat_id,
+            question=SURVEY_QUESTIONS[0],
+            options=SURVEY_OPTIONS[0],
             is_anonymous=False,
             allows_multiple_answers=True
         )
@@ -78,44 +79,35 @@ def handle_poll_answer(update: Update, context: CallbackContext):
         writer = csv.writer(file)
         writer.writerow([user_id, options_ids])
 
+    # Foydalanuvchi chat_id ni olish
+    chat_id = context.user_data.get('chat_id')
+    if not chat_id:
+        chat_id = user_id  # fallback
+
     # Keyingi savolni yuborish
     survey_index = context.user_data.get('survey_index', 0) + 1
     context.user_data['survey_index'] = survey_index
 
-    questions = [
-        "Sizga qaysi ovqatlar yoqadi?",
-        "Sizga qaysi Fri-setlar yoqadi?",
-        "Sizga oshxonadagi qaysi qulayliklar yoqadi?",
-        "Oshxonamizni 1-5 gacha baholang"
-    ]
-    options = [
-        ["Manti", "Tovuq Kabob", "Grechka", "Osh", "Lag'mon", "Galupsi"],
-        ["Fri", "Fri Kolbasa", "Fri Sosiska", "Fri Chicken"],
-        ["Tozalik", "Ovqatlarning ta'mi va sifati", "Xodimlarning muomalasi"],
-        ["1", "2", "3", "4", "5"]
-    ]
-
-    if survey_index < len(questions):
+    if survey_index < len(SURVEY_QUESTIONS):
         context.bot.send_poll(
-            chat_id=update.effective_chat.id,
-            question=questions[survey_index],
-            options=options[survey_index],
+            chat_id=chat_id,
+            question=SURVEY_QUESTIONS[survey_index],
+            options=SURVEY_OPTIONS[survey_index],
             is_anonymous=False,
             allows_multiple_answers=True
         )
     else:
-        # Oxirgi javobdan keyin foydalanuvchiga rahmat xabari va bosh menyu
+        # Tugaganda rahmat xabarini yuboramiz
         keyboard = [
             [KeyboardButton("📨 Shikoyat va takliflar"), KeyboardButton("📊 So‘rovnomada qatnashish")]
         ]
         reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
         context.bot.send_message(
-            chat_id=update.effective_chat.id,
-            text="So'rovnomada qatnashganingiz uchun rahmat. Sizning fikringiz biz uchun muhim!",
+            chat_id=chat_id,
+            text="✅ So'rovnomada qatnashganingiz uchun rahmat!\nSizning fikringiz biz uchun muhim!",
             reply_markup=reply_markup
         )
-        # Indeksni tozalash
-        context.user_data['survey_index'] = 0
+        context.user_data.clear()
 
 # Main
 def main():
